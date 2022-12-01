@@ -14,6 +14,8 @@ import simple.api.wrappers.SimplePlayer;
 
 public class main extends Script implements KeyListener {
 
+	// GOODLUCK ON PKING :)
+
 	final String[] meleeSet = { "Blood whip", "Fighter torso", "Torag's platelegs", "Dragonfire shield" };
 	final String[] mageSet = { "Ahrim's robetop", "Ahrim's robeskirt", "Ahrim's staff", "Dragonfire shield" };
 	final String[] rangeSet = { "Chaotic crossbow", "Karil's leatherskirt", "Karil's leathertop", "Dragonfire shield" };
