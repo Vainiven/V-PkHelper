@@ -29,7 +29,7 @@
 					<minimizeJar>true</minimizeJar>
 					<filters>
 						<filter>
-							<artifact>api</artifact>
+							<artifact>spkapi</artifact>
 							<includes>
 								<include>**</include>
 							</includes>
@@ -45,7 +45,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>VScripts</groupId>
-			<artifactId>api</artifactId>
+			<artifactId>spkapi</artifactId>
 			<version>0.1</version>
 		</dependency>
 	</dependencies>
