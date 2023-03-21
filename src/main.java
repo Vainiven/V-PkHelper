@@ -75,20 +75,22 @@ public class main extends Script implements KeyListener, SimplePaintable {
 					snare();
 				}
 
-				if (target().getHealthRatio() < 30 && ctx.combat.getSpecialAttackPercentage() > 49) {
+				if (target().getHealthRatio() < 30 && ctx.combat.getSpecialAttackPercentage() > 49
+						&& overheadIcon() != HeadIcon.MELEE) {
 					equipGear(specSet);
 					spec();
 				} else {
 					System.out.println(overheadIcon());
 					if (overheadIcon() == HeadIcon.MAGIC) {
 						equipGear(rangeSet);
-						setOffensivePrayer("magic");
+						setOffensivePrayer("ranged");
 					} else if (overheadIcon() == HeadIcon.RANGED && target().distanceTo(ctx.players.getLocal()) <= 2) {
 						equipGear(meleeSet);
 						setOffensivePrayer("melee");
 					} else if ((overheadIcon() == HeadIcon.MELEE || overheadIcon() == HeadIcon.RANGED)
-							&& target().distanceTo(ctx.players.getLocal()) > 2) {
-						setOffensivePrayer("magic");
+							&& target( .distanceTo(ctx.players.getLocal()) > 2) {
+						equipGear(rangeSet);
+						setOffensivePrayer("ranged");
 					}
 				}
 			}
@@ -105,8 +107,10 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	private void setOffensivePrayer(String form) {
 		if (form.equals("magic")) {
-			enablePrayer(Prayers.RIGOUR);
+			enablePrayer(Prayers.AUGURY);
 		} else if (form.equals("ranged")) {
+			enablePrayer(Prayers.RIGOUR);
+		} else if (form.equals("melee")) {
 			enablePrayer(Prayers.PIETY);
 		}
 		enablePrayer(Prayers.PROTECT_ITEM);
@@ -135,8 +139,9 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	private void spec() {
 		if (!ctx.combat.specialAttack()) {
 			ctx.combat.toggleSpecialAttack(true);
+			enablePrayer(Prayers.PIETY);
 			attackTarget();
-			ctx.onCondition(() -> !ctx.combat.specialAttack());
+			ctx.onCondition(() -> !ctx.combat.specialAttack(), 2, 1500);
 		}
 	}
 
