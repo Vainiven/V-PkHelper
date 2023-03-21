@@ -88,7 +88,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 						equipGear(meleeSet);
 						setOffensivePrayer("melee");
 					} else if ((overheadIcon() == HeadIcon.MELEE || overheadIcon() == HeadIcon.RANGED)
-							&& target( .distanceTo(ctx.players.getLocal()) > 2) {
+							&& target().distanceTo(ctx.players.getLocal()) > 2) {
 						equipGear(rangeSet);
 						setOffensivePrayer("ranged");
 					}
