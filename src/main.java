@@ -11,6 +11,7 @@ import simple.api.script.Script;
 import simple.api.script.ScriptManifest;
 import simple.api.script.interfaces.SimplePaintable;
 import simple.api.wrappers.SimpleActor;
+import simple.api.wrappers.definitions.ItemDefinition;
 
 @ScriptManifest(author = "Vainiven", category = Category.OTHER, description = "Pk Helper", name = "V-PkHelper", version = "1.0", discord = "Vainiven#6986", servers = {
 		"SpawnPk" })
@@ -74,7 +75,6 @@ public class main extends Script implements KeyListener, SimplePaintable {
 				if (target.getRemainingPath() > 0) {
 					snare();
 				}
-
 				if (target().getHealthRatio() < 30 && ctx.combat.getSpecialAttackPercentage() > 49
 						&& overheadIcon() != HeadIcon.MELEE) {
 					equipGear(specSet);
@@ -92,6 +92,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 						equipGear(rangeSet);
 						setOffensivePrayer("ranged");
 					}
+					attackTarget();
 				}
 			}
 		}
@@ -101,8 +102,8 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		equipGear(mageSet);
 		ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
 		ctx.magic.selectSpell(1592);
-		ctx.sleep(300);
 		ctx.players.populate().filter(target).next().interact(365);
+		ctx.sleep(1300);
 	}
 
 	private void setOffensivePrayer(String form) {
@@ -114,12 +115,6 @@ public class main extends Script implements KeyListener, SimplePaintable {
 			enablePrayer(Prayers.PIETY);
 		}
 		enablePrayer(Prayers.PROTECT_ITEM);
-	}
-
-	private void enablePrayer(Prayers prayer) {
-		if (ctx.prayers.prayerActive(prayer)) {
-			ctx.prayers.prayer(prayer);
-		}
 	}
 
 	private HeadIcon overheadIcon() {
@@ -157,7 +152,52 @@ public class main extends Script implements KeyListener, SimplePaintable {
 			if (!ctx.inventory.populate().filterContains("Cooked Karambwan").isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.CONSUME);
 			}
+			attackTarget();
 			return true;
+		}
+		return false;
+	}
+
+	private void enablePrayer(Prayers prayer) {
+		if (ctx.prayers.prayerActive(prayer)) {
+			ctx.prayers.prayer(prayer);
+		}
+	}
+
+	private void setDefensivePrayer() {
+		int gear[] = ctx.players.populate().filter(target).next().getEquipment();
+		ItemDefinition[] equippedItems = new ItemDefinition[11];
+
+		for (int i = 0; i < equippedItems.length; i++) {
+			equippedItems[i] = ctx.definitions.getItemDefinition(gear[i] - 512);
+		}
+
+		String[] rangeItems = { "ballista", "Ballista", "blowpipe", "bow", "Bow", "cannon", "knife" };
+		String[] magicItems = { "Korasi", "korasi", "staff", "trident", "Trident", "Staff", "wand", "sceptre",
+				"bulwark" };
+		String[] meleeItems = { "sword", "hasta", "axe", "spear", "maul", "mace", "rapier", "dagger", "bludgeon",
+				"whip", "tent", "Blade", "scythe", "Scythe", "claws", "scimitar", "hammer" };
+
+		boolean isRange = containsItemName(equippedItems, rangeItems);
+		boolean isMagic = containsItemName(equippedItems, magicItems);
+		boolean isMelee = containsItemName(equippedItems, meleeItems);
+
+		if (isRange) {
+			enablePrayer(Prayers.PROTECT_FROM_MISSILES);
+		} else if (isMagic) {
+			enablePrayer(Prayers.PROTECT_FROM_MAGIC);
+		} else if (isMelee) {
+			enablePrayer(Prayers.PROTECT_FROM_MELEE);
+		}
+	}
+
+	private boolean containsItemName(ItemDefinition[] items, String[] itemNames) {
+		for (ItemDefinition item : items) {
+			for (String name : itemNames) {
+				if (item.getName().contains(name)) {
+					return true;
+				}
+			}
 		}
 		return false;
 	}
