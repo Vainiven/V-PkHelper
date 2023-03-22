@@ -42,6 +42,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		getTarget();
 		if (!eat() && !drinkPrayerPotion()) {
 			changeGearAndPrayer();
+			setDefensivePrayer();
 		}
 	}
 
@@ -60,7 +61,6 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	private void getTarget() {
 		if (ctx.players.getLocal().getInteracting() != null) {
 			SimpleActor<?> g = ctx.players.getLocal().getInteracting();
-			System.out.println(g);
 			target = g;
 		}
 	}
@@ -77,10 +77,11 @@ public class main extends Script implements KeyListener, SimplePaintable {
 				}
 				if (target().getHealthRatio() < 30 && ctx.combat.getSpecialAttackPercentage() > 49
 						&& overheadIcon() != HeadIcon.MELEE) {
+					System.out.println("Speccing because enemy hp is: " + target.getHealthRatio() + "%");
 					equipGear(specSet);
 					spec();
 				} else {
-					System.out.println(overheadIcon());
+					System.out.println("Enemy is praying: " + overheadIcon());
 					if (overheadIcon() == HeadIcon.MAGIC) {
 						equipGear(rangeSet);
 						setOffensivePrayer("ranged");
@@ -122,7 +123,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private boolean drinkPrayerPotion() {
-		if (ctx.prayers.prayerPercent() < 40) {
+		if (ctx.prayers.prayerPercent() < 50) {
 			if (!ctx.inventory.populate().filterContains("Super Restore").isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.CONSUME);
 			}
@@ -141,7 +142,9 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void attackTarget() {
-		ctx.players.populate().filter(target).next().interact(SimplePlayerActions.ATTACK);
+		if (!ctx.players.getLocal().getInteracting().equals(target)) {
+			ctx.players.populate().filter(target).next().interact(SimplePlayerActions.ATTACK);
+		}
 	}
 
 	private boolean eat() {
