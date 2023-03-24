@@ -44,6 +44,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 					setDefensivePrayer();
 					if (!eat()) {
 						changeGearAndPrayer();
+						whenDead();
 					}
 				} else {
 					target = null;
@@ -64,6 +65,19 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		}
 		if (set.equals(mageSet)) {
 			ctx.menuActions.sendAction(315, 4738, 0, 19530);
+		}
+	}
+
+	private void whenDead() {
+		if (target.isDead()) {
+			if (!ctx.inventory.populate().filter(12115).isEmpty()) {
+				ctx.inventory.next().interact(SimpleItemActions.DROP);
+				ctx.sleep(3000);
+				if (!ctx.inventory.populate().filter(19240).isEmpty()) {
+					ctx.inventory.next().interact(SimpleItemActions.DROP);
+					ctx.sleep(3000);
+				}
+			}
 		}
 	}
 
@@ -211,20 +225,15 @@ public class main extends Script implements KeyListener, SimplePaintable {
 			break;
 		}
 
-//		// CAST SNARE TO OPPONENT
-//		case KeyEvent.VK_W: {
-//			System.out.println("We have detected W. Casting Snare.");
-//			equipGear(mageSet);
-//			enablePrayers(Prayers.MYSTIC_MIGHT);
-//			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
-//			ctx.magic.selectSpell(1592);
-//			ctx.sleep(300);
-//			if (interacting != null) {
-//				interacting.interact(365);
-//
-//			}
-//			break;
-//		}
+		case KeyEvent.VK_3: {
+			System.out.println("We have detected 3. Teleporting home.");
+			if (!ctx.inventory.populate().filter(15000).isEmpty()) {
+				ctx.inventory.next().interact(SimpleItemActions.DROP);
+				ctx.sleep(100);
+				ctx.magic.castHomeTeleport();
+			}
+			break;
+		}
 
 //		// CAST TELEBLOCK ON OPPONENT
 //		case KeyEvent.VK_Q: {
