@@ -11,6 +11,7 @@ import simple.api.script.Script;
 import simple.api.script.ScriptManifest;
 import simple.api.script.interfaces.SimplePaintable;
 import simple.api.wrappers.SimpleActor;
+import simple.api.wrappers.SimplePlayer;
 
 @ScriptManifest(author = "Vainiven", category = Category.OTHER, description = "Pk Helper", name = "V-PkHelper", version = "1.0", discord = "Vainiven#6986", servers = {
 		"SpawnPk" })
@@ -19,17 +20,13 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	SimpleActor<?> target;
 
-	final String[] meleeSet = { "Helm of neitiznot", "Blood slayer amulet", "Blood slayer cape", "Chaotic longsword",
-			"Flameburst defender", "Bandos tassets", "Bandos chestplate", "Blood slayer gloves", "Blood slayer boots",
-			"Archers' ring (i)" };
-	final String[] mageSet = { "Helm of neitiznot", "Blood slayer amulet", "Blood slayer cape", "Staff of the dead",
-			"Tome of fire", "Ahrim's robetop", "Ahrim's robeskirt", "Blood slayer gloves", "Blood slayer boots",
-			"Archers' ring (i)" };
-	final String[] rangeSet = { "Helm of neitiznot", "Necklace of anguish (or)", "Blood slayer cape", "3rd age bow",
-			"Karil's leathertop", "Karil's leatherskirt", "Blood slayer gloves", "Blood slayer boots",
-			"Archers' ring (i)" };
-	final String[] specSet = { "Helm of neitiznot", "Blood slayer amulet", "Blood slayer cape", "Dragon claws",
-			"Bandos tassets", "Bandos chestplate", "Blood slayer gloves", "Blood slayer boots", "Archers' ring (i)" };
+	final String[] mageSet = { "Blood slayer helmet", "Blood slayer amulet", "Eternal bounty cape",
+			"Toxic staff of the dead", "Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom",
+			"Blood slayer gloves", "Blood slayer boots", "Brimstone ring" };
+	final String[] rangeSet = { "Blood slayer helmet", "Blood slayer amulet", "Eternal bounty cape", "Zaryte bow",
+			"Morrigan's leather body", "Morrigan's leather chaps", "Blood slayer gloves", "Blood slayer boots",
+			"Brimstone ring" };
+	final String[] specSet = { "Armadyl godsword" };
 
 	@Override
 	public boolean onExecute() {
@@ -38,18 +35,19 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	@Override
 	public void onProcess() {
-		if (target == null) {
-			getTarget();
-		} else {
-			if (target.withinRange(ctx.players.getLocal().getLocation(), 15)
-					&& ctx.players.getLocal().getInteracting() != null
-					&& ctx.players.getLocal().getInteracting().equals(target)) {
-				if (!eat() && !drinkPrayerPotion()) {
-					changeGearAndPrayer();
-					setDefensivePrayer();
-				}
+		if (!drinkPrayerPotion()) {
+			if (target == null) {
+				getTarget();
 			} else {
-				target = null;
+				if (target.withinRange(ctx.players.getLocal().getLocation(), 15)
+						&& ctx.players.getLocal().getInteracting() != null) {
+					setDefensivePrayer();
+					if (!eat()) {
+						changeGearAndPrayer();
+					}
+				} else {
+					target = null;
+				}
 			}
 		}
 	}
@@ -81,13 +79,12 @@ public class main extends Script implements KeyListener, SimplePaintable {
 			if (target.getRemainingPath() > 0) {
 				snare();
 			}
-//				System.out.println("Enemy is praying: " + overheadIcon());
-			if (overheadIcon() == HeadIcon.MAGIC) {
+			if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
 				equipGear(rangeSet);
-				setOffensivePrayer("ranged");
-			} else if (overheadIcon() == HeadIcon.RANGED) {
+				enablePrayer(Prayers.RIGOUR);
+			} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
 				equipGear(mageSet);
-				setOffensivePrayer("magic");
+				enablePrayer(Prayers.AUGURY);
 			}
 			attackTarget();
 		}
@@ -101,24 +98,18 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		ctx.sleep(1300);
 	}
 
-	private void setOffensivePrayer(String form) {
-		if (form.equals("magic")) {
-			enablePrayer(Prayers.AUGURY);
-		} else if (form.equals("ranged")) {
-			enablePrayer(Prayers.RIGOUR);
-		} else if (form.equals("melee")) {
-			enablePrayer(Prayers.PIETY);
-		}
-		enablePrayer(Prayers.PROTECT_ITEM);
-	}
-
 	private HeadIcon overheadIcon() {
 		return ctx.players.populate().filter(target).next().getOverheadIcon();
 	}
 
+	private SimplePlayer overheadIconInt() {
+		return ctx.players.populate().filter(target).next();
+	}
+
 	private boolean drinkPrayerPotion() {
-		if (ctx.prayers.prayerPercent() < 50) {
-			if (!ctx.inventory.populate().filterContains("Super Restore", "Sanfew serum flask").isEmpty()) {
+		if (ctx.prayers.prayerPercent() < 70) {
+			if (!ctx.inventory.populate().filterContains("Super Restore", "Sanfew serum flask", "Super restore flask")
+					.isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.CONSUME);
 			}
 			return true;
@@ -127,9 +118,9 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void spec() {
+		enablePrayer(Prayers.PIETY);
 		if (!ctx.combat.specialAttack()) {
 			ctx.combat.toggleSpecialAttack(true);
-			enablePrayer(Prayers.PIETY);
 			attackTarget();
 			ctx.onCondition(() -> !ctx.combat.specialAttack(), 2, 1500);
 		}
@@ -163,33 +154,35 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	private void setDefensivePrayer() {
 		int gear[] = ctx.players.populate().filter(target).next().getEquipment();
-		String equippedWeapon = ctx.definitions.getItemDefinition(gear[3] - 512).getName();
+		if (ctx.definitions.getItemDefinition(gear[3] - 512) != null) {
+			String equippedWeapon = ctx.definitions.getItemDefinition(gear[3] - 512).getName();
 
-		System.out.println(equippedWeapon);
+			System.out.println(equippedWeapon);
 
-		String[] rangeItems = { "ballista", "Ballista", "blowpipe", "bow", "Bow", "cannon", "knife" };
-		String[] magicItems = { "Korasi", "korasi", "staff", "trident", "Trident", "Staff", "wand", "sceptre",
-				"bulwark" };
-		String[] meleeItems = { "godsword", "sword", "hasta", "axe", "spear", "maul", "mace", "rapier", "dagger",
-				"bludgeon", "whip", "tent", "Blade", "scythe", "Scythe", "claws", "scimitar", "hammer" };
+			String[] rangeItems = { "ballista", "blowpipe", "bow", "Bow", "cannon", "knife" };
+			String[] magicItems = { "korasi", "staff", "trident", "staff", "wand", "sceptre", "bulwark" };
+			String[] meleeItems = { "godsword", "sword", "hasta", "axe", "spear", "maul", "mace", "rapier", "dagger",
+					"bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar", "hammer" };
 
-		boolean isRange = containsItemName(equippedWeapon, rangeItems);
-		boolean isMagic = containsItemName(equippedWeapon, magicItems);
-		boolean isMelee = containsItemName(equippedWeapon, meleeItems);
+			boolean isRange = containsItemName(equippedWeapon, rangeItems);
+			boolean isMagic = containsItemName(equippedWeapon, magicItems);
+			boolean isMelee = containsItemName(equippedWeapon, meleeItems);
 
-		if (isRange) {
-			enablePrayer(Prayers.PROTECT_FROM_MISSILES);
-		} else if (isMagic) {
-			enablePrayer(Prayers.PROTECT_FROM_MAGIC);
-		} else if (isMelee) {
-			enablePrayer(Prayers.PROTECT_FROM_MELEE);
+			if (isRange) {
+				enablePrayer(Prayers.PROTECT_FROM_MISSILES);
+			} else if (isMagic) {
+				enablePrayer(Prayers.PROTECT_FROM_MAGIC);
+			} else if (isMelee) {
+				enablePrayer(Prayers.PROTECT_FROM_MELEE);
+			}
+			attackTarget();
 		}
-		attackTarget();
 	}
 
 	private boolean containsItemName(String item, String[] itemNames) {
 		for (String i : itemNames) {
-			if (i.contains(item)) {
+			String y = i.toLowerCase();
+			if (y.contains(item)) {
 				return true;
 			}
 		}
