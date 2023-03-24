@@ -35,6 +35,8 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	@Override
 	public void onProcess() {
+		enablePrayer(Prayers.PROTECT_ITEM);
+
 		if (!drinkPrayerPotion()) {
 			if (target == null) {
 				getTarget();
@@ -46,6 +48,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 						changeGearAndPrayer();
 						whenDead();
 					}
+					attackTarget();
 				} else {
 					target = null;
 				}
@@ -69,7 +72,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void whenDead() {
-		if (target.isDead()) {
+		if (target.isDead() || target.getHealth() == 0) {
 			if (!ctx.inventory.populate().filter(12115).isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.DROP);
 				ctx.sleep(3000);
@@ -110,6 +113,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		ctx.magic.selectSpell(1592);
 		ctx.players.populate().filter(target).next().interact(365);
 		ctx.sleep(1300);
+		attackTarget();
 	}
 
 	private HeadIcon overheadIcon() {
@@ -132,11 +136,11 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void spec() {
-		enablePrayer(Prayers.PIETY);
-		if (!ctx.combat.specialAttack()) {
+		if (!ctx.combat.specialAttack() && !ctx.equipment.populate().filterContains(specSet).isEmpty()) {
+			enablePrayer(Prayers.PIETY);
 			ctx.combat.toggleSpecialAttack(true);
 			attackTarget();
-			ctx.onCondition(() -> !ctx.combat.specialAttack(), 2, 1500);
+			ctx.sleep(1700);
 		}
 	}
 
@@ -221,6 +225,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		case KeyEvent.VK_2: {
 			System.out.println("Speccing because enemy hp is: " + target.getHealthRatio() + "%");
 			equipGear(specSet);
+			attackTarget();
 			spec();
 			break;
 		}
@@ -229,9 +234,9 @@ public class main extends Script implements KeyListener, SimplePaintable {
 			System.out.println("We have detected 3. Teleporting home.");
 			if (!ctx.inventory.populate().filter(15000).isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.DROP);
-				ctx.sleep(100);
-				ctx.magic.castHomeTeleport();
 			}
+			ctx.magic.castHomeTeleport();
+			ctx.inventory.populate().filter(19240).next().interact(SimpleItemActions.DROP);
 			break;
 		}
 
