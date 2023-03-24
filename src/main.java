@@ -69,6 +69,9 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		if (set.equals(mageSet)) {
 			ctx.menuActions.sendAction(315, 4738, 0, 19530);
 		}
+		if (set.equals(specSet)) {
+			enablePrayer(Prayers.PIETY);
+		}
 	}
 
 	private void whenDead() {
@@ -136,11 +139,11 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void spec() {
-		if (!ctx.combat.specialAttack() && !ctx.equipment.populate().filterContains(specSet).isEmpty()) {
-			enablePrayer(Prayers.PIETY);
+		int specialAttk = ctx.combat.getSpecialAttackPercentage();
+		if (!ctx.combat.specialAttack()) {
 			ctx.combat.toggleSpecialAttack(true);
 			attackTarget();
-			ctx.sleep(1700);
+			ctx.onCondition(() -> specialAttk == specialAttk - 50, 20, 200);
 		}
 	}
 
@@ -225,7 +228,6 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		case KeyEvent.VK_2: {
 			System.out.println("Speccing because enemy hp is: " + target.getHealthRatio() + "%");
 			equipGear(specSet);
-			attackTarget();
 			spec();
 			break;
 		}
