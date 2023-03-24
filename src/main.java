@@ -147,7 +147,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void enablePrayer(Prayers prayer) {
-		if (ctx.prayers.prayerActive(prayer)) {
+		if (!ctx.prayers.prayerActive(prayer)) {
 			ctx.prayers.prayer(prayer);
 		}
 	}
@@ -159,10 +159,10 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 			System.out.println(equippedWeapon);
 
-			String[] rangeItems = { "ballista", "blowpipe", "bow", "Bow", "cannon", "knife" };
+			String[] rangeItems = { "ballista", "blowpipe", "bow", "cannon", "knife" };
 			String[] magicItems = { "korasi", "staff", "trident", "staff", "wand", "sceptre", "bulwark" };
 			String[] meleeItems = { "godsword", "sword", "hasta", "axe", "spear", "maul", "mace", "rapier", "dagger",
-					"bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar", "hammer" };
+					"bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar", "hammer", "flail" };
 
 			boolean isRange = containsItemName(equippedWeapon, rangeItems);
 			boolean isMagic = containsItemName(equippedWeapon, magicItems);
@@ -181,8 +181,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	private boolean containsItemName(String item, String[] itemNames) {
 		for (String i : itemNames) {
-			String y = i.toLowerCase();
-			if (y.contains(item)) {
+			if (item.toLowerCase().contains(i)) {
 				return true;
 			}
 		}
