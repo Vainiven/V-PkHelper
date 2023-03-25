@@ -20,10 +20,10 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	SimpleActor<?> target;
 
-	final String[] mageSet = { "Blood slayer helmet", "Blood slayer amulet", "Eternal bounty cape",
-			"Toxic staff of the dead", "Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom",
-			"Blood slayer gloves", "Blood slayer boots", "Brimstone ring" };
-	final String[] rangeSet = { "Blood slayer helmet", "Blood slayer amulet", "Eternal bounty cape", "Zaryte bow",
+	final String[] mageSet = { "Blood slayer helmet", "Occult necklace", "Eternal bounty cape", "Nightmare staff",
+			"Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom", "Blood slayer gloves", "Blood slayer boots",
+			"Brimstone ring" };
+	final String[] rangeSet = { "Blood slayer helmet", "Necklace of anguish (or)", "Eternal bounty cape", "Zaryte bow",
 			"Morrigan's leather body", "Morrigan's leather chaps", "Blood slayer gloves", "Blood slayer boots",
 			"Brimstone ring" };
 	final String[] specSet = { "Armadyl godsword" };
