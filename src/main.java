@@ -7,20 +7,20 @@ import simple.api.actions.SimpleItemActions;
 import simple.api.actions.SimplePlayerActions;
 import simple.api.filters.SimplePrayers.Prayers;
 import simple.api.script.Category;
+import simple.api.script.LoopingScript;
 import simple.api.script.Script;
 import simple.api.script.ScriptManifest;
 import simple.api.script.interfaces.SimplePaintable;
-import simple.api.wrappers.SimpleActor;
 import simple.api.wrappers.SimplePlayer;
 
 @ScriptManifest(author = "Vainiven", category = Category.OTHER, description = "Pk Helper", name = "V-PkHelper", version = "1.0", discord = "Vainiven#6986", servers = {
 		"SpawnPk" })
 
-public class main extends Script implements KeyListener, SimplePaintable {
+public class main extends Script implements KeyListener, SimplePaintable, LoopingScript {
 
-	SimpleActor<?> target;
+	String targetName;
 
-	final String[] mageSet = { "Blood slayer helmet", "Occult necklace", "Eternal bounty cape", "Nightmare staff",
+	final String[] mageSet = { "Blood slayer helmet", "Occult necklace (or)", "Eternal bounty cape", "Nightmare staff",
 			"Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom", "Blood slayer gloves", "Blood slayer boots",
 			"Brimstone ring" };
 	final String[] rangeSet = { "Blood slayer helmet", "Necklace of anguish (or)", "Eternal bounty cape", "Zaryte bow",
@@ -36,23 +36,15 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	@Override
 	public void onProcess() {
 		enablePrayer(Prayers.PROTECT_ITEM);
-
-		if (!drinkPrayerPotion()) {
-			if (target == null) {
-				getTarget();
-			} else {
-				if (target.withinRange(ctx.players.getLocal().getLocation(), 15)
-						&& ctx.players.getLocal().getInteracting() != null) {
-					setDefensivePrayer();
-					if (!eat()) {
-						changeGearAndPrayer();
-						whenDead();
-					}
-					attackTarget();
-				} else {
-					target = null;
-				}
-			}
+		if (hasTarget() && targetClose()) {
+			drinkPrayerPotion();
+			setDefensivePrayer();
+			changeGearAndPrayer();
+			eat();
+			whenDead();
+			attackTarget();
+		} else {
+			getTarget();
 		}
 	}
 
@@ -72,10 +64,11 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		if (set.equals(specSet)) {
 			enablePrayer(Prayers.PIETY);
 		}
+		attackTarget();
 	}
 
 	private void whenDead() {
-		if (target.isDead() || target.getHealth() == 0) {
+		if (target().isDead() || target().getHealth() == 0) {
 			if (!ctx.inventory.populate().filter(12115).isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.DROP);
 				ctx.sleep(3000);
@@ -87,44 +80,55 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		}
 	}
 
+	private SimplePlayer target() {
+		return ctx.players.populate().filter(targetName).next();
+	}
+
+	private boolean targetClose() {
+		return ctx.players.populate().filter(targetName).filterWithin(17).isEmpty();
+	}
+
+	private boolean hasTarget() {
+		return targetName != null;
+	}
+
 	private void getTarget() {
-		if (ctx.players.getLocal().getInteracting() != null) {
-			SimpleActor<?> g = ctx.players.getLocal().getInteracting();
-			target = g;
+		if (ctx.players.populate().filter(targetName).isEmpty() && ctx.players.getLocal().getInteracting() != null) {
+			targetName = ctx.players.getLocal().getInteracting().getName();
+			System.out.println("We set our target to: " + targetName);
 		}
+
 	}
 
 	private void changeGearAndPrayer() {
-		if (!ctx.players.populate().filter(target).isEmpty()) {
-			if (target.getRemainingPath() > 0) {
-				snare();
-			}
-			if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
-				equipGear(rangeSet);
-				enablePrayer(Prayers.RIGOUR);
-			} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
-				equipGear(mageSet);
-				enablePrayer(Prayers.AUGURY);
-			}
-			attackTarget();
+		if (target().getRemainingPath() > 0) {
+			snare();
 		}
+		if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
+			equipGear(rangeSet);
+			enablePrayer(Prayers.RIGOUR);
+		} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
+			equipGear(mageSet);
+			enablePrayer(Prayers.AUGURY);
+		}
+		attackTarget();
 	}
 
 	private void snare() {
 		equipGear(mageSet);
 		ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
 		ctx.magic.selectSpell(1592);
-		ctx.players.populate().filter(target).next().interact(365);
+		target().interact(365);
 		ctx.sleep(1300);
 		attackTarget();
 	}
 
 	private HeadIcon overheadIcon() {
-		return ctx.players.populate().filter(target).next().getOverheadIcon();
+		return target().getOverheadIcon();
 	}
 
 	private SimplePlayer overheadIconInt() {
-		return ctx.players.populate().filter(target).next();
+		return ctx.players.populate().filter(targetName).next();
 	}
 
 	private boolean drinkPrayerPotion() {
@@ -139,17 +143,16 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void spec() {
-		int specialAttk = ctx.combat.getSpecialAttackPercentage();
 		if (!ctx.combat.specialAttack()) {
 			ctx.combat.toggleSpecialAttack(true);
+			ctx.sleep(200, 300);
 			attackTarget();
-			ctx.onCondition(() -> specialAttk == specialAttk - 50, 20, 200);
 		}
 	}
 
 	private void attackTarget() {
-		if (target != null && !ctx.players.getLocal().getInteracting().equals(target)) {
-			ctx.players.populate().filter(target).next().interact(SimplePlayerActions.ATTACK);
+		if (!ctx.players.getLocal().getInteracting().equals(target())) {
+			target().interact(SimplePlayerActions.ATTACK);
 		}
 	}
 
@@ -174,29 +177,32 @@ public class main extends Script implements KeyListener, SimplePaintable {
 	}
 
 	private void setDefensivePrayer() {
-		int gear[] = ctx.players.populate().filter(target).next().getEquipment();
-		if (ctx.definitions.getItemDefinition(gear[3] - 512) != null) {
-			String equippedWeapon = ctx.definitions.getItemDefinition(gear[3] - 512).getName();
+		if (target().getEquipment() != null) {
+			int gear[] = target().getEquipment();
+			if (ctx.definitions.getItemDefinition(gear[3] - 512) != null) {
+				String equippedWeapon = ctx.definitions.getItemDefinition(gear[3] - 512).getName();
 
-			System.out.println(equippedWeapon);
+				System.out.println(equippedWeapon);
 
-			String[] rangeItems = { "ballista", "blowpipe", "bow", "cannon", "knife" };
-			String[] magicItems = { "korasi", "staff", "trident", "staff", "wand", "sceptre", "bulwark" };
-			String[] meleeItems = { "godsword", "sword", "hasta", "axe", "spear", "maul", "mace", "rapier", "dagger",
-					"bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar", "hammer", "flail" };
+				String[] rangeItems = { "ballista", "blowpipe", "bow", "cannon", "knife" };
+				String[] magicItems = { "korasi", "staff", "trident", "staff", "wand", "sceptre", "bulwark" };
+				String[] meleeItems = { "godsword", "sword", "hasta", "axe", "spear", "maul", "mace", "rapier",
+						"dagger", "bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar", "hammer",
+						"flail" };
 
-			boolean isRange = containsItemName(equippedWeapon, rangeItems);
-			boolean isMagic = containsItemName(equippedWeapon, magicItems);
-			boolean isMelee = containsItemName(equippedWeapon, meleeItems);
+				boolean isRange = containsItemName(equippedWeapon, rangeItems);
+				boolean isMagic = containsItemName(equippedWeapon, magicItems);
+				boolean isMelee = containsItemName(equippedWeapon, meleeItems);
 
-			if (isRange) {
-				enablePrayer(Prayers.PROTECT_FROM_MISSILES);
-			} else if (isMagic) {
-				enablePrayer(Prayers.PROTECT_FROM_MAGIC);
-			} else if (isMelee) {
-				enablePrayer(Prayers.PROTECT_FROM_MELEE);
+				if (isRange) {
+					enablePrayer(Prayers.PROTECT_FROM_MISSILES);
+				} else if (isMagic) {
+					enablePrayer(Prayers.PROTECT_FROM_MAGIC);
+				} else if (isMelee) {
+					enablePrayer(Prayers.PROTECT_FROM_MELEE);
+				}
+				attackTarget();
 			}
-			attackTarget();
 		}
 	}
 
@@ -226,7 +232,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 		}
 
 		case KeyEvent.VK_2: {
-			System.out.println("Speccing because enemy hp is: " + target.getHealthRatio() + "%");
+			System.out.println("Speccing because enemy hp is: " + target().getHealthRatio() + "%");
 			equipGear(specSet);
 			spec();
 			break;
@@ -238,6 +244,7 @@ public class main extends Script implements KeyListener, SimplePaintable {
 				ctx.inventory.next().interact(SimpleItemActions.DROP);
 			}
 			ctx.magic.castHomeTeleport();
+			ctx.sleep(500);
 			ctx.inventory.populate().filter(19240).next().interact(SimpleItemActions.DROP);
 			break;
 		}
@@ -296,10 +303,15 @@ public class main extends Script implements KeyListener, SimplePaintable {
 
 	@Override
 	public void onPaint(Graphics2D g) {
-		if (target != null) {
-			g.drawString(target.toString(), 100, 100);
+		if (target() != null) {
+			g.drawString(target().getName(), 100, 100);
 		}
 
+	}
+
+	@Override
+	public int loopDuration() {
+		return 200;
 	}
 
 }
