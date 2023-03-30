@@ -6,6 +6,7 @@ import simple.api.HeadIcon;
 import simple.api.actions.SimpleItemActions;
 import simple.api.actions.SimplePlayerActions;
 import simple.api.filters.SimplePrayers.Prayers;
+import simple.api.filters.SimpleSkills.Skill;
 import simple.api.script.Category;
 import simple.api.script.LoopingScript;
 import simple.api.script.Script;
@@ -19,6 +20,7 @@ import simple.api.wrappers.SimplePlayer;
 public class main extends Script implements KeyListener, SimplePaintable, LoopingScript {
 
 	String targetName;
+	int saraCount;
 
 	final String[] mageSet = { "Blood slayer helmet", "Occult necklace (or)", "Eternal bounty cape", "Nightmare staff",
 			"Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom", "Blood slayer gloves", "Blood slayer boots",
@@ -64,7 +66,6 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 		if (set.equals(specSet)) {
 			enablePrayer(Prayers.PIETY);
 		}
-		attackTarget();
 	}
 
 	private void whenDead() {
@@ -85,11 +86,23 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 	}
 
 	private boolean targetClose() {
-		return ctx.players.populate().filter(targetName).filterWithin(17).isEmpty();
+		if (ctx.players.getLocal().getLocation().getRegionID() == 12342) {
+			targetName = "";
+			return false;
+		}
+		if (targetName.equals("")) {
+			return false;
+		}
+		if (!ctx.players.populate().filter(targetName).filterWithin(17).isEmpty()) {
+			return true;
+		} else {
+			targetName = "";
+			return false;
+		}
 	}
 
 	private boolean hasTarget() {
-		return targetName != null;
+		return targetName != "";
 	}
 
 	private void getTarget() {
@@ -104,14 +117,16 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 		if (target().getRemainingPath() > 0) {
 			snare();
 		}
-		if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
-			equipGear(rangeSet);
-			enablePrayer(Prayers.RIGOUR);
-		} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
-			equipGear(mageSet);
-			enablePrayer(Prayers.AUGURY);
-		}
-		attackTarget();
+//		if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
+//			equipGear(rangeSet);
+//			enablePrayer(Prayers.RIGOUR);
+//		} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
+//			equipGear(mageSet);
+//			enablePrayer(Prayers.AUGURY);
+//		} else {
+//			equipGear(rangeSet);
+//		}
+//		attackTarget();
 	}
 
 	private void snare() {
@@ -119,12 +134,42 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 		ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
 		ctx.magic.selectSpell(1592);
 		target().interact(365);
-		ctx.sleep(1300);
+		ctx.sleep(1500);
 		attackTarget();
+	}
+
+	private void tb() {
+		equipGear(mageSet);
+		ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+		ctx.magic.selectSpell(12445);
+		target().interact(365);
+		ctx.sleep(2500);
+	}
+
+	private void teleportTarget() {
+		equipGear(mageSet);
+		ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+		if (getWildernessLevel() > 30) {
+			if (!ctx.inventory.populate().filter(15000).isEmpty()) {
+				ctx.inventory.next().interact(SimpleItemActions.DROP);
+			}
+		}
+		ctx.menuActions.sendAction(315, 23111, 27, 7455);
+		ctx.onCondition(() -> ctx.players.getLocal().getAnimation() != 8939, 20, 100);
+		if (!ctx.inventory.populate().filter(3241).isEmpty()) {
+			ctx.inventory.next().interact(SimpleItemActions.DROP);
+		}
 	}
 
 	private HeadIcon overheadIcon() {
 		return target().getOverheadIcon();
+	}
+
+	private int getWildernessLevel() {
+		if (!ctx.widgets.populate().filter(199).isEmpty()) {
+			return Integer.parseInt(ctx.widgets.populate().filter(199).next().getText().replace("Level: ", ""));
+		}
+		return 0;
 	}
 
 	private SimplePlayer overheadIconInt() {
@@ -132,7 +177,7 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 	}
 
 	private boolean drinkPrayerPotion() {
-		if (ctx.prayers.prayerPercent() < 70) {
+		if (ctx.prayers.prayerPercent() < 70 || ctx.skills.getLevel(Skill.MAGIC) < 95) {
 			if (!ctx.inventory.populate().filterContains("Super Restore", "Sanfew serum flask", "Super restore flask")
 					.isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.CONSUME);
@@ -143,24 +188,44 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 	}
 
 	private void spec() {
-		if (!ctx.combat.specialAttack()) {
-			ctx.combat.toggleSpecialAttack(true);
-			ctx.sleep(200, 300);
-			attackTarget();
+		if (target().getHealthRatio() < 40 && target().getOverheadIcon() != HeadIcon.MELEE
+				&& overheadIconInt().getHeadIcon() != 13 && ctx.combat.getSpecialAttackPercentage() >= 50) {
+			equipGear(specSet);
+			if (!ctx.combat.specialAttack()) {
+				ctx.combat.toggleSpecialAttack(true);
+				System.out.println("Speccing because enemy hp is: " + target().getHealthRatio() + "%");
+				attackTarget();
+				ctx.onCondition(() -> ctx.players.getLocal().getAnimation() == 7074, 20, 150);
+			}
+		}
+	}
+
+	public void specOverride() {
+		if (target().getOverheadIcon() != HeadIcon.MELEE && overheadIconInt().getHeadIcon() != 13
+				&& ctx.combat.getSpecialAttackPercentage() >= 50) {
+			if (!ctx.combat.specialAttack()) {
+				ctx.combat.toggleSpecialAttack(true);
+				System.out.println("Speccing because enemy hp is: " + target().getHealthRatio() + "%");
+				attackTarget();
+				ctx.onCondition(() -> ctx.players.getLocal().getAnimation() == 7074, 20, 150);
+			}
 		}
 	}
 
 	private void attackTarget() {
-		if (!ctx.players.getLocal().getInteracting().equals(target())) {
+		if (ctx.players.getLocal().getInteracting() == null) {
 			target().interact(SimplePlayerActions.ATTACK);
 		}
 	}
 
 	private boolean eat() {
-		if (ctx.combat.healthPercent() < 60
-				&& !ctx.inventory.populate().filter("Manta ray", "Cooked Karambwan").isEmpty()) {
+		if (saraCount == 3) {
+			drinkRestore();
+		}
+		if (ctx.combat.healthPercent() < 60 && !ctx.inventory.populate()
+				.filterContains("Manta ray", "Cooked Karambwan", "Saradomin brew").isEmpty()) {
 			ctx.inventory.next().interact(SimpleItemActions.CONSUME);
-			ctx.sleep(100);
+			ctx.sleep(250);
 			if (!ctx.inventory.populate().filterContains("Cooked Karambwan").isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.CONSUME);
 			}
@@ -168,6 +233,14 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 			return true;
 		}
 		return false;
+	}
+
+	private void drinkRestore() {
+		if (!ctx.inventory.populate().filterContains("Super restore").isEmpty()) {
+			ctx.inventory.next().interact(SimpleItemActions.CONSUME);
+			saraCount = 0;
+			ctx.sleep(250);
+		}
 	}
 
 	private void enablePrayer(Prayers prayer) {
@@ -182,13 +255,11 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 			if (ctx.definitions.getItemDefinition(gear[3] - 512) != null) {
 				String equippedWeapon = ctx.definitions.getItemDefinition(gear[3] - 512).getName();
 
-				System.out.println(equippedWeapon);
-
 				String[] rangeItems = { "ballista", "blowpipe", "bow", "cannon", "knife" };
 				String[] magicItems = { "korasi", "staff", "trident", "staff", "wand", "sceptre", "bulwark" };
-				String[] meleeItems = { "godsword", "sword", "hasta", "axe", "spear", "maul", "mace", "rapier",
-						"dagger", "bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar", "hammer",
-						"flail" };
+				String[] meleeItems = { "balmiung", "godsword", "sword", "hasta", "axe", "spear", "maul", "mace",
+						"rapier", "dagger", "bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar",
+						"hammer", "flail" };
 
 				boolean isRange = containsItemName(equippedWeapon, rangeItems);
 				boolean isMagic = containsItemName(equippedWeapon, magicItems);
@@ -224,28 +295,63 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 	public void keyPressed(KeyEvent e) {
 		final int key = e.getKeyCode();
 		switch (key) {
-		case KeyEvent.VK_1: {
-			System.out.println("We have detected 1. Melee Set.");
+		case KeyEvent.VK_Q: {
+			System.out.println("We have detected Q. Mage Set.");
 			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			enablePrayer(Prayers.AUGURY);
 			equipGear(mageSet);
 			break;
 		}
 
-		case KeyEvent.VK_2: {
-			System.out.println("Speccing because enemy hp is: " + target().getHealthRatio() + "%");
+		case KeyEvent.VK_W: {
+			System.out.println("We have detected W. Range Set.");
+			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			enablePrayer(Prayers.RIGOUR);
+			equipGear(rangeSet);
+			break;
+		}
+
+		case KeyEvent.VK_E: {
+			System.out.println("We have detected E. Spec Set.");
+			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			enablePrayer(Prayers.PIETY);
 			equipGear(specSet);
-			spec();
+			specOverride();
+			break;
+		}
+
+		case KeyEvent.VK_1: {
+			System.out.println("We have detected 1. Tbing target.");
+			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			tb();
+			break;
+		}
+
+		case KeyEvent.VK_2: {
+			System.out.println("We have detected 2. Teleporting to target.");
+			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			teleportTarget();
 			break;
 		}
 
 		case KeyEvent.VK_3: {
 			System.out.println("We have detected 3. Teleporting home.");
-			if (!ctx.inventory.populate().filter(15000).isEmpty()) {
-				ctx.inventory.next().interact(SimpleItemActions.DROP);
+			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			if (ctx.players.getLocal().getLocation().getRegionID() != 12342) {
+				if (!ctx.inventory.populate().filter(15000).isEmpty()) {
+					ctx.inventory.next().interact(SimpleItemActions.DROP);
+				}
+				ctx.magic.castHomeTeleport();
+				ctx.sleep(500);
+				ctx.inventory.populate().filter(3241).next().interact(SimpleItemActions.DROP);
 			}
-			ctx.magic.castHomeTeleport();
-			ctx.sleep(500);
-			ctx.inventory.populate().filter(19240).next().interact(SimpleItemActions.DROP);
+			break;
+		}
+
+		case KeyEvent.VK_4: {
+			ctx.keyboard.pressKey(KeyEvent.VK_BACK_SPACE);
+			System.out.println("Resetted target.");
+			targetName = "";
 			break;
 		}
 
