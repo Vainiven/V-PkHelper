@@ -1,6 +1,7 @@
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
 
 import simple.api.HeadIcon;
 import simple.api.actions.SimpleItemActions;
@@ -21,14 +22,20 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 
 	String targetName;
 	int saraCount;
+	ArrayList<SimplePlayer> enemys = new ArrayList<SimplePlayer>();
 
-	final String[] mageSet = { "Blood slayer helmet", "Occult necklace (or)", "Eternal bounty cape", "Nightmare staff",
-			"Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom", "Blood slayer gloves", "Blood slayer boots",
-			"Brimstone ring" };
-	final String[] rangeSet = { "Blood slayer helmet", "Necklace of anguish (or)", "Eternal bounty cape", "Zaryte bow",
-			"Morrigan's leather body", "Morrigan's leather chaps", "Blood slayer gloves", "Blood slayer boots",
-			"Brimstone ring" };
-	final String[] specSet = { "Armadyl godsword" };
+//	final String[] mageSet = { "Blood slayer helmet", "Occult necklace (or)", "Eternal bounty cape", "Nightmare staff",
+//			"Tome of fire", "Zuriel's robe top", "Zuriel's robe bottom", "Blood slayer gloves", "Blood slayer boots",
+//			"Brimstone ring" };
+//	final String[] rangeSet = { "Blood slayer helmet", "Necklace of anguish (or)", "Eternal bounty cape", "Zaryte bow",
+//			"Morrigan's leather body", "Morrigan's leather chaps", "Blood slayer gloves", "Blood slayer boots",
+//			"Brimstone ring" };
+//	final String[] specSet = { "Armadyl godsword" };
+
+	final String[] mageSet = { "Ahrim's staff", "Spirit shield", "Mystic robe bottom", "Mystic robe top",
+			"Zuriel's staff" };
+	final String[] rangeSet = { "Rune c'bow", "Rune platelegs", "Black d'hide body" };
+	final String[] specSet = { "Dragon dagger", "Vesta longsword" };
 
 	@Override
 	public boolean onExecute() {
@@ -37,8 +44,24 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 
 	@Override
 	public void onProcess() {
+
 		enablePrayer(Prayers.PROTECT_ITEM);
 		if (hasTarget() && targetClose()) {
+
+			for (SimplePlayer q : ctx.players.populate()) {
+				if (q.getInteracting().equals(ctx.players.getLocal())) {
+					enemys.add(q);
+				} else if (enemys.contains(q)) {
+					enemys.remove(q);
+				}
+			}
+
+			System.out.println(enemys);
+			for (SimplePlayer p : enemys) {
+				int[] gear = p.getEquipment();
+				System.out.println(ctx.definitions.getItemDefinition(gear[3] - 512));
+			}
+
 			drinkPrayerPotion();
 			setDefensivePrayer();
 			changeGearAndPrayer();
@@ -61,7 +84,11 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 			}
 		}
 		if (set.equals(mageSet)) {
+			// FIRE SURGE
 			ctx.menuActions.sendAction(315, 4738, 0, 19530);
+
+			// ANCIENT
+			ctx.menuActions.sendAction(315, 4151, 4, 13136);
 		}
 		if (set.equals(specSet)) {
 			enablePrayer(Prayers.PIETY);
@@ -69,13 +96,12 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 	}
 
 	private void whenDead() {
-		if (target().isDead() || target().getHealth() == 0) {
-			if (!ctx.inventory.populate().filter(12115).isEmpty()) {
+		if (target().isDead() || target().getHealthRatio() == 0) {
+			if (!ctx.inventory.populate().filter(12111).isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.DROP);
-				ctx.sleep(3000);
-				if (!ctx.inventory.populate().filter(19240).isEmpty()) {
+				ctx.sleep(2500);
+				if (!ctx.inventory.populate().filter(3241).isEmpty()) {
 					ctx.inventory.next().interact(SimpleItemActions.DROP);
-					ctx.sleep(3000);
 				}
 			}
 		}
@@ -178,7 +204,8 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 
 	private boolean drinkPrayerPotion() {
 		if (ctx.prayers.prayerPercent() < 70 || ctx.skills.getLevel(Skill.MAGIC) < 95) {
-			if (!ctx.inventory.populate().filterContains("Super Restore", "Sanfew serum flask", "Super restore flask")
+			if (!ctx.inventory.populate()
+					.filterContains("Super Restore", "Sanfew serum flask", "Super restore flask", "Sanfew serum")
 					.isEmpty()) {
 				ctx.inventory.next().interact(SimpleItemActions.CONSUME);
 			}
@@ -223,7 +250,7 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 			drinkRestore();
 		}
 		if (ctx.combat.healthPercent() < 60 && !ctx.inventory.populate()
-				.filterContains("Manta ray", "Cooked Karambwan", "Saradomin brew").isEmpty()) {
+				.filterContains("Manta ray", "Cooked Karambwan", "Saradomin brew", "Shark").isEmpty()) {
 			ctx.inventory.next().interact(SimpleItemActions.CONSUME);
 			ctx.sleep(250);
 			if (!ctx.inventory.populate().filterContains("Cooked Karambwan").isEmpty()) {
@@ -342,7 +369,6 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 					ctx.inventory.next().interact(SimpleItemActions.DROP);
 				}
 				ctx.magic.castHomeTeleport();
-				ctx.sleep(500);
 				ctx.inventory.populate().filter(3241).next().interact(SimpleItemActions.DROP);
 			}
 			break;
