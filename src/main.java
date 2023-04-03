@@ -143,16 +143,16 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 		if (target().getRemainingPath() > 0) {
 			snare();
 		}
-//		if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
-//			equipGear(rangeSet);
-//			enablePrayer(Prayers.RIGOUR);
-//		} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
-//			equipGear(mageSet);
-//			enablePrayer(Prayers.AUGURY);
-//		} else {
-//			equipGear(rangeSet);
-//		}
-//		attackTarget();
+		if (overheadIcon() == HeadIcon.MAGIC || overheadIconInt().getHeadIcon() == 14) {
+			equipGear(rangeSet);
+			enablePrayer(Prayers.RIGOUR);
+		} else if (overheadIcon() == HeadIcon.RANGED || overheadIconInt().getHeadIcon() == 15) {
+			equipGear(mageSet);
+			enablePrayer(Prayers.AUGURY);
+		} else {
+			equipGear(rangeSet);
+		}
+		attackTarget();
 	}
 
 	private void snare() {
