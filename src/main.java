@@ -284,7 +284,7 @@ public class main extends Script implements KeyListener, SimplePaintable, Loopin
 
 				String[] rangeItems = { "ballista", "blowpipe", "bow", "cannon", "knife" };
 				String[] magicItems = { "korasi", "staff", "trident", "staff", "wand", "sceptre", "bulwark" };
-				String[] meleeItems = { "balmiung", "godsword", "sword", "hasta", "axe", "spear", "maul", "mace",
+				String[] meleeItems = { "balmung", "godsword", "sword", "hasta", "axe", "spear", "maul", "mace",
 						"rapier", "dagger", "bludgeon", "whip", "tent", "blade", "scythe", "claws", "scimitar",
 						"hammer", "flail" };
 
