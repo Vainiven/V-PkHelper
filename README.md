@@ -3,7 +3,7 @@
 ![Version Badge](https://img.shields.io/badge/version-1.0-blue)
 
 **Author**: Vainiven  
-**Discord**: Vainiven#6986  
+**Discord**: Vainiven 
 **Server**: SpawnPk  
 
 ## 📖 Description
@@ -26,8 +26,6 @@ V-PkHelper is a comprehensive helper tool designed to assist players in PvP comb
 - **1**: TBing target.
 - **2**: Teleporting to target.
 
-... (and so on for other keys)
-
 ## 💾 Installation
 
 1. Clone this repository or download the script.
@@ -36,18 +34,9 @@ V-PkHelper is a comprehensive helper tool designed to assist players in PvP comb
 4. Configure any personal settings.
 5. Start the script and enjoy!
 
-## 📈 Roadmap
-
-Stay tuned for updates and new features!
-
 ## 📜 License
 
 This project is open source. Please provide appropriate attribution, including a link back to this repository.
-
-## 🙏 Acknowledgements
-
-- The SpawnPk community for the constant feedback.
-- All contributors and testers!
 
 ---
 
